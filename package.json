@@ -1,6 +1,6 @@
 {
   "name": "agrouter",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Simplistic, agnostic routing library",
   "main": "build/agrouter.min.js",
   "module": "build/agrouter.es.js",
@@ -9,8 +9,21 @@
     "start": "rollup -c",
     "prepublishOnly": "npm start"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AgronKabashi/agrouter.git"
+  },
+  "keywords": [
+    "javascript",
+    "agnostic",
+    "routing"
+  ],
   "author": "Agron Kabashi",
   "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/AgronKabashi/agrouter/issues"
+  },
+  "homepage": "https://github.com/AgronKabashi/agrouter#readme",
   "devDependencies": {
     "rollup": "^0.43.0",
     "rollup-plugin-buble": "^0.15.0"
