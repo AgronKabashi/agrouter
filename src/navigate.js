@@ -38,11 +38,8 @@ function navigate (pathname, pushState = true) {
       //   throw new Error("Route does not exist");
       // }
 
-      if (typeof route === "function") {
-        actionPayloads.push(route());
-      } else if (route.action) {
-        actionPayloads.push(route.action(matchData));
-      }
+      const action = typeof route === "function" && route || route.action || (() => {});
+      actionPayloads.push(action(matchData));
 
       return {
         actionPayloads,
