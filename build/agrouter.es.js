@@ -1,62 +1,77 @@
-function findRoute (routes, pathPart) {
+var totalRegexSlashLength = 2;
+
+function findSegment (uriSegment, routes) {
   // Do we have a direct match?
-  if (routes[pathPart]) {
+  if (routes[uriSegment]) {
     return {
-      route: routes[pathPart]
+      output: routes[uriSegment]
     };
   }
 
-  // Find the routes with regular expressions and find a match
+  // Attempt to locate a route that match the specified uri segment using regular expressions
   var match;
   var routeKey = Object.keys(routes)
+    // A route that starts and ends with a "/" is a regular expression route
     .filter(function (key) { return key.startsWith("/") && key.endsWith("/"); })
-    .find(function (key) { return (match = pathPart.match(key.substr(1, key.length - 2))); });
+    // Execute each one until we find one that matches our uriSegment
+    .find(function (key) { return (match = uriSegment.match(key.substr(1, key.length - totalRegexSlashLength))); });
 
   return {
-    route: routeKey ? routes[routeKey] : {},
-    matchData: routeKey && match
+    output: routes[routeKey],
+    actionArguments: match
   };
 }
 
-function navigate (pathname, pushState) {
-  if ( pushState === void 0 ) pushState = true;
-
-  var initialReducerState = {
-    actionPayloads: [],
-    routes: this.routes
+function getUriSegments (uri, routes) {
+  var initial = {
+    uriSegments: [],
+    routesForSegment: routes
   };
 
-  var pathParts = pathname.split("/");
-  var ref = pathParts
-    .reduce(function (ref, pathPart) {
-      var actionPayloads = ref.actionPayloads;
-      var routes = ref.routes; if ( routes === void 0 ) routes = {};
+  if (uri === "/") {
+    uri = ""; // eslint-disable-line no-param-reassign
+  }
 
-      pathPart = pathPart || "/";
-      var ref$1 = findRoute(routes, pathPart);
-      var route = ref$1.route;
-      var matchData = ref$1.matchData;
+  // Separate the uri into segments
+  return uri.split("/")
+    .reduce(function (ref, segment) {
+      var uriSegments = ref.uriSegments;
+      var routesForSegment = ref.routesForSegment; if ( routesForSegment === void 0 ) routesForSegment = {};
 
-      // if (!route) {
-      //   throw new Error("Route does not exist");
-      // }
+      var uriSegment = segment || "/";
+      var ref$1 = findSegment(uriSegment, routesForSegment);
+      var output = ref$1.output; if ( output === void 0 ) output = {};
+      var actionArguments = ref$1.actionArguments;
 
-      var action = typeof route === "function" && route || route.action || (function () {});
-      actionPayloads.push(action(matchData));
+      // The output should either be a function or an object containing an "action" function. This function
+      // represents the action to take when traversing this uriSegment
+      var action = typeof output === "function" && output || typeof output.action === "function" && output.action || (function () {});
+      uriSegments.push({
+        uriSegment: uriSegment,
+        actionResult: action && action(actionArguments)
+      });
 
+      // Keep iterating by going deeper into the tree
       return {
-        actionPayloads: actionPayloads,
-        routes: route.routes
+        uriSegments: uriSegments,
+        routesForSegment: output.routes
       };
-    }, initialReducerState);
-  var actionPayloads = ref.actionPayloads;
+    }, initial);
+}
 
-  pushState && history.pushState(null, null, pathname);
+function navigate (uri, routes, history, pushState) {
+  if ( pushState === void 0 ) pushState = true;
+
+  var ref = getUriSegments(uri, routes);
+  var uriSegments = ref.uriSegments;
+
+  // Only update the url if desired since pushState might be false for
+  // when navigating back or forth
+  pushState && history.pushState(null, null, uri);
 
   return {
-    pathname: pathname,
-    actionPayloads: actionPayloads,
-    pathParts: pathParts
+    uri: uri,
+    uriSegments: uriSegments
   };
 }
 
@@ -66,9 +81,11 @@ function createRouter (routes, options) {
   if ( routes === void 0 ) routes = [];
   if ( options === void 0 ) options = defaultOptions;
 
+  var history = options.history; if ( history === void 0 ) history = window.history;
+
   return {
     routes: routes,
-    navigate: navigate
+    navigate: function (uri, pushState) { return navigate(uri, routes, history, pushState); }
   };
 }
 

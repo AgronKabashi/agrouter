@@ -2,56 +2,71 @@ export {
   navigate
 };
 
-function findRoute (routes, pathPart) {
+const totalRegexSlashLength = 2;
+
+function findSegment (uriSegment, routes) {
   // Do we have a direct match?
-  if (routes[pathPart]) {
+  if (routes[uriSegment]) {
     return {
-      route: routes[pathPart]
+      output: routes[uriSegment]
     };
   }
 
-  // Find the routes with regular expressions and find a match
+  // Attempt to locate a route that match the specified uri segment using regular expressions
   let match;
   const routeKey = Object.keys(routes)
+    // A route that starts and ends with a "/" is a regular expression route
     .filter(key => key.startsWith("/") && key.endsWith("/"))
-    .find(key => (match = pathPart.match(key.substr(1, key.length - 2))));
+    // Execute each one until we find one that matches our uriSegment
+    .find(key => (match = uriSegment.match(key.substr(1, key.length - totalRegexSlashLength))));
 
   return {
-    route: routeKey ? routes[routeKey] : {},
-    matchData: routeKey && match
+    output: routes[routeKey],
+    actionArguments: match
   };
 }
 
-function navigate (pathname, pushState = true) {
-  const initialReducerState = {
-    actionPayloads: [],
-    routes: this.routes
+function getUriSegments (uri, routes) {
+  const initial = {
+    uriSegments: [],
+    routesForSegment: routes
   };
 
-  const pathParts = pathname.split("/");
-  const { actionPayloads } = pathParts
-    .reduce(({ actionPayloads, routes = {} }, pathPart) => {
-      pathPart = pathPart || "/";
-      const { route, matchData } = findRoute(routes, pathPart);
+  if (uri === "/") {
+    uri = ""; // eslint-disable-line no-param-reassign
+  }
 
-      // if (!route) {
-      //   throw new Error("Route does not exist");
-      // }
+  // Separate the uri into segments
+  return uri.split("/")
+    .reduce(({ uriSegments, routesForSegment = {} }, segment) => {
+      const uriSegment = segment || "/";
+      const { output = {}, actionArguments } = findSegment(uriSegment, routesForSegment);
 
-      const action = typeof route === "function" && route || route.action || (() => {});
-      actionPayloads.push(action(matchData));
+      // The output should either be a function or an object containing an "action" function. This function
+      // represents the action to take when traversing this uriSegment
+      const action = typeof output === "function" && output || typeof output.action === "function" && output.action || (() => {});
+      uriSegments.push({
+        uriSegment,
+        actionResult: action && action(actionArguments)
+      });
 
+      // Keep iterating by going deeper into the tree
       return {
-        actionPayloads,
-        routes: route.routes
+        uriSegments,
+        routesForSegment: output.routes
       };
-    }, initialReducerState);
+    }, initial);
+}
 
-  pushState && history.pushState(null, null, pathname);
+function navigate (uri, routes, history, pushState = true) {
+  const { uriSegments } = getUriSegments(uri, routes);
+
+  // Only update the url if desired since pushState might be false for
+  // when navigating back or forth
+  pushState && history.pushState(null, null, uri);
 
   return {
-    pathname,
-    actionPayloads,
-    pathParts
+    uri,
+    uriSegments
   };
 }
