@@ -7,7 +7,11 @@ export {
 const defaultOptions = {};
 
 function createRouter (routes = [], options = defaultOptions) {
-  const { history = window.history } = options;
+  const { history } = options;
+
+  if (!history) {
+    throw new Error("agrouter: History was not supplied");
+  }
 
   return {
     routes,

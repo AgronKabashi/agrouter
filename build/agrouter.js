@@ -4,6 +4,22 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 var totalRegexSlashLength = 2;
 
+function navigate (uri, routes, history, pushState) {
+  if ( pushState === void 0 ) pushState = true;
+
+  var ref = getUriSegments(uri, routes);
+  var uriSegments = ref.uriSegments;
+
+  // Only update the url if desired since pushState might be false for
+  // when navigating back or forth
+  pushState && history.pushState(null, null, uri);
+
+  return {
+    uri: uri,
+    uriSegments: uriSegments
+  };
+}
+
 function findSegment (uriSegment, routes) {
   // Do we have a direct match?
   if (routes[uriSegment]) {
@@ -63,29 +79,17 @@ function getUriSegments (uri, routes) {
     }, initial);
 }
 
-function navigate (uri, routes, history, pushState) {
-  if ( pushState === void 0 ) pushState = true;
-
-  var ref = getUriSegments(uri, routes);
-  var uriSegments = ref.uriSegments;
-
-  // Only update the url if desired since pushState might be false for
-  // when navigating back or forth
-  pushState && history.pushState(null, null, uri);
-
-  return {
-    uri: uri,
-    uriSegments: uriSegments
-  };
-}
-
 var defaultOptions = {};
 
 function createRouter (routes, options) {
   if ( routes === void 0 ) routes = [];
   if ( options === void 0 ) options = defaultOptions;
 
-  var history = options.history; if ( history === void 0 ) history = window.history;
+  var history = options.history;
+
+  if (!history) {
+    throw new Error("agrouter: History was not supplied");
+  }
 
   return {
     routes: routes,

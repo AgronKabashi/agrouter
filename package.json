@@ -1,9 +1,9 @@
 {
   "name": "agrouter",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Simplistic, agnostic routing library",
-  "main": "build/agrouter.min.js",
-  "module": "build/agrouter.es.js",
+  "main": "build/agrouter.js",
+  "module": "src/index.js",
   "jsnext:main": "build/agrouter.es.js",
   "scripts": {
     "start": "rollup -c",

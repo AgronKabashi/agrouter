@@ -1,18 +1,12 @@
 import buble from "rollup-plugin-buble";
 
+const packageJson = require("./package.json");
+
 export default {
   entry: "src/index.js",
   context: "this",
-  targets: [
-    {
-      format: "es",
-      dest: "build/agrouter.es.js"
-    },
-    {
-      format: "cjs",
-      dest: "build/agrouter.min.js"
-    }
-  ],
+  format: "cjs",
+  dest: packageJson.main,
   plugins: [
     buble()
   ]

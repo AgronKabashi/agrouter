@@ -1,8 +1,21 @@
+const totalRegexSlashLength = 2;
+
 export {
   navigate
 };
 
-const totalRegexSlashLength = 2;
+function navigate (uri, routes, history, pushState = true) {
+  const { uriSegments } = getUriSegments(uri, routes);
+
+  // Only update the url if desired since pushState might be false for
+  // when navigating back or forth
+  pushState && history.pushState(null, null, uri);
+
+  return {
+    uri,
+    uriSegments
+  };
+}
 
 function findSegment (uriSegment, routes) {
   // Do we have a direct match?
@@ -56,17 +69,4 @@ function getUriSegments (uri, routes) {
         routesForSegment: output.routes
       };
     }, initial);
-}
-
-function navigate (uri, routes, history, pushState = true) {
-  const { uriSegments } = getUriSegments(uri, routes);
-
-  // Only update the url if desired since pushState might be false for
-  // when navigating back or forth
-  pushState && history.pushState(null, null, uri);
-
-  return {
-    uri,
-    uriSegments
-  };
 }
