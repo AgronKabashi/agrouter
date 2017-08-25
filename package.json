@@ -1,13 +1,13 @@
 {
   "name": "agrouter",
-  "version": "2.0.1",
+  "version": "3.0.0",
   "description": "Simplistic, agnostic routing library",
   "main": "build/agrouter.js",
   "module": "src/index.js",
   "scripts": {
     "start": "rollup -c",
     "prepublishOnly": "npm start",
-    "test": "mocha --compilers js:babel-core/register"
+    "test": "NODE_ENV=test NODE_PATH=./src mocha --compilers js:babel-core/register test/**"
   },
   "repository": {
     "type": "git",

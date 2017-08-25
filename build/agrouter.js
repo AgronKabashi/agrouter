@@ -7,28 +7,30 @@ var totalRegexSlashLength = 2;
 function navigate (uri, routes, history, pushState) {
   if ( pushState === void 0 ) pushState = true;
 
-  var ref = getUriSegments(uri, routes);
-  var uriSegments = ref.uriSegments;
+  // Separate the uri into segments
+  var uriSegments = uri === "/" ? ["/"] : uri.split("/");
 
   // Only update the url if desired since pushState might be false for
   // when navigating back or forth
   pushState && history.pushState(null, null, uri);
 
-  return {
-    uri: uri,
-    uriSegments: uriSegments
-  };
+  return getUriSegmentResult(uriSegments, routes)
+    .then(function (results) { return ({
+      uri: uri,
+      uriSegments: results
+    }); });
 }
 
-function findSegment (uriSegment, routes) {
+function findRoute (uriSegment, routes) {
   // Do we have a direct match?
   if (routes[uriSegment]) {
     return {
-      output: routes[uriSegment]
+      output: routes[uriSegment],
+      subRoutes: routes[uriSegment].routes
     };
   }
 
-  // Attempt to locate a route that match the specified uri segment using regular expressions
+  // Attempt to locate a route that matches the specified uri segment using regular expressions
   var match;
   var routeKey = Object.keys(routes)
     // A route that starts and ends with a "/" is a regular expression route
@@ -38,45 +40,43 @@ function findSegment (uriSegment, routes) {
 
   return {
     output: routes[routeKey],
-    actionArguments: match
+    actionArguments: match,
+    subRoutes: routes[routeKey].routes
   };
 }
 
-function getUriSegments (uri, routes) {
-  var initial = {
-    uriSegments: [],
-    routesForSegment: routes
-  };
+function isPromise (obj) {
+  return !!obj && typeof obj === "object" && typeof obj.then === "function";
+}
 
-  if (uri === "/") {
-    uri = ""; // eslint-disable-line no-param-reassign
-  }
+function getUriSegmentResult (ref, routes) {
+  var firstUriSegment = ref[0];
+  var remainingUriSegments = ref.slice(1);
+  if ( routes === void 0 ) routes = {};
 
-  // Separate the uri into segments
-  return uri.split("/")
-    .reduce(function (ref, segment) {
-      var uriSegments = ref.uriSegments;
-      var routesForSegment = ref.routesForSegment; if ( routesForSegment === void 0 ) routesForSegment = {};
+  var uriSegment = firstUriSegment === "" ? "/" : firstUriSegment;
+  var ref$1 = findRoute(uriSegment, routes);
+  var output = ref$1.output; if ( output === void 0 ) output = {};
+  var actionArguments = ref$1.actionArguments;
+  var subRoutes = ref$1.subRoutes;
+  var action = typeof output === "function" && output || typeof output.action === "function" && output.action || (function () {});
 
-      var uriSegment = segment || "/";
-      var ref$1 = findSegment(uriSegment, routesForSegment);
-      var output = ref$1.output; if ( output === void 0 ) output = {};
-      var actionArguments = ref$1.actionArguments;
+  var actionResult = action(actionArguments);
+  var promise = isPromise(actionResult) ? actionResult : Promise.resolve(actionResult);
 
-      // The output should either be a function or an object containing an "action" function. This function
-      // represents the action to take when traversing this uriSegment
-      var action = typeof output === "function" && output || typeof output.action === "function" && output.action || (function () {});
-      uriSegments.push({
-        uriSegment: uriSegment,
-        actionResult: action && action(actionArguments)
-      });
+  return promise.then(function (actionResult) {
+    var payload = {
+      uriSegment: uriSegment,
+      actionResult: actionResult
+    };
 
-      // Keep iterating by going deeper into the tree
-      return {
-        uriSegments: uriSegments,
-        routesForSegment: output.routes
-      };
-    }, initial);
+    if (remainingUriSegments.length) {
+      return getUriSegmentResult(remainingUriSegments, subRoutes)
+        .then(function (recursiveResult) { return [payload ].concat( recursiveResult); });
+    }
+
+    return [payload];
+  });
 }
 
 var defaultOptions = {};
