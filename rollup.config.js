@@ -3,10 +3,12 @@ import buble from "rollup-plugin-buble";
 const packageJson = require("./package.json");
 
 export default {
-  entry: "src/index.js",
+  input: "src/index.js",
   context: "this",
-  format: "cjs",
-  dest: packageJson.main,
+  output: {
+    format: "cjs",
+    file: packageJson.main
+  },
   plugins: [
     buble()
   ]
