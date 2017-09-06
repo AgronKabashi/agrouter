@@ -30,8 +30,8 @@ describe("Async routes", () => {
     });
   });
 
-  it("should resolve wait for each promise in the chain to resolve", () => {
-    return navigate("/delayed/100ms/100ms", asyncRoutes, history).then(result => {
+  it("should wait for each promise in the chain to resolve", () => {
+    return navigate("/delayed/20ms/50ms", asyncRoutes, history).then(result => {
       assert.deepEqual(result, {
         uriSegments: [
           {
@@ -43,15 +43,15 @@ describe("Async routes", () => {
             actionResult: undefined
           },
           {
-            uriSegment: "100ms",
-            actionResult: "Resolved after 100ms"
+            uriSegment: "20ms",
+            actionResult: "Resolved after 20ms"
           },
           {
-            uriSegment: "100ms",
-            actionResult: "Resolved after another 100ms"
+            uriSegment: "50ms",
+            actionResult: "Resolved after another 50ms"
           }
         ],
-        uri: "/delayed/100ms/100ms"
+        uri: "/delayed/20ms/50ms"
       });
     });
   });

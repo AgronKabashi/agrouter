@@ -32,7 +32,7 @@ describe("Regex routes", () => {
   });
 
   it("should be able to extract variables", () => {
-    return navigate("/?productId=5", regexRoutes, history).then(result => {
+    return navigate("/?productId=5&add-to-cart=true", regexRoutes, history).then(result => {
       assert.deepEqual(result, {
         uriSegments: [
           {
@@ -40,11 +40,11 @@ describe("Regex routes", () => {
             actionResult: rootActionResult
           },
           {
-            uriSegment: "?productId=5",
-            actionResult: "Regex: Extracting variables - Query: productId, Value: 5"
+            uriSegment: "?productId=5&add-to-cart=true",
+            actionResult: "Regex: Extracting variables - productId=5,add-to-cart=true"
           }
         ],
-        uri: "/?productId=5"
+        uri: "/?productId=5&add-to-cart=true"
       });
     });
   });

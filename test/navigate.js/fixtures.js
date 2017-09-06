@@ -1,3 +1,5 @@
+import { ROUTE_PRESETS } from "routePresets";
+
 export const rootActionResult = "Root";
 export const testActionResult = "Test";
 export const notEmptyActionResult = "NotEmpty";
@@ -21,12 +23,13 @@ export const regexRoutes = {
   "/": {
     action: () => rootActionResult,
     routes: {
-      "/\\?(\\w+)=(\\d+)/": ([, key, value]) => `Regex: Extracting variables - Query: ${key}, Value: ${value}`,
-      "/[\\s\\S]+/": () => catchAllActionResult
+      [ROUTE_PRESETS.KEY_VALUE_PAIRS]: variables => `Regex: Extracting variables - ${variables}`,
+      [ROUTE_PRESETS.CATCH_ALL]: () => catchAllActionResult
     }
   }
 };
 
+/* eslint-disable promise/avoid-new */
 export const asyncRoutes = {
   "/": {
     action: () => rootActionResult,
@@ -34,12 +37,12 @@ export const asyncRoutes = {
       "resolvedPromise": () => Promise.resolve("Resolved promise"),
       "delayed": {
         routes: {
-          "/(\\d+)ms/": {
+          [/(\d+)ms/]: {
             action: ([, delay]) => new Promise(resolve => {
               setTimeout(() => resolve(`Resolved after ${delay}ms`), delay);
             }),
             routes: {
-              "/(\\d+)ms/": ([, delay]) => new Promise(resolve => {
+              [/(\d+)ms/]: ([, delay]) => new Promise(resolve => {
                 setTimeout(() => resolve(`Resolved after another ${delay}ms`), delay);
               })
             }

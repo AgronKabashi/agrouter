@@ -1,4 +1,4 @@
-const totalRegexSlashLength = 2;
+import { isPromise } from "./utilities";
 
 export {
   navigate
@@ -19,11 +19,15 @@ function navigate (uri, routes, history, pushState = true) {
     }));
 }
 
-function findRoute (uriSegment, routes) {
+function getActionOrDefault (output) {
+  return typeof output === "function" && output || typeof output.action === "function" && output.action || (() => {});
+}
+
+function getRouteInfo (uriSegment, routes) {
   // Do we have a direct match?
   if (routes[uriSegment]) {
     return {
-      output: routes[uriSegment],
+      action: getActionOrDefault(routes[uriSegment]),
       subRoutes: routes[uriSegment].routes
     };
   }
@@ -32,40 +36,42 @@ function findRoute (uriSegment, routes) {
   let match;
   const routeKey = Object.keys(routes)
     // A route that starts and ends with a "/" is a regular expression route
-    .filter(key => key.startsWith("/") && key.endsWith("/"))
+    .filter(key => key.startsWith("/"))
     // Execute each one until we find one that matches our uriSegment
-    .find(key => (match = uriSegment.match(key.substr(1, key.length - totalRegexSlashLength))));
+    .find(key => {
+      const lastSlashIndex = key.lastIndexOf("/");
+      const regexFlags = key.substring(lastSlashIndex + 1);
+      const regex = new RegExp(key.substring(1, lastSlashIndex), regexFlags);
+
+      return (match = uriSegment.match(regex));
+    });
+
+  match = match || [];
 
   return {
-    output: routes[routeKey],
-    actionArguments: match,
+    action: () => getActionOrDefault(routes[routeKey])(match),
     subRoutes: routes[routeKey].routes
   };
 }
 
-function isPromise (obj) {
-  return !!obj && typeof obj === "object" && typeof obj.then === "function";
-}
-
 function getUriSegmentResult ([firstUriSegment, ...remainingUriSegments], routes = {}) {
   const uriSegment = firstUriSegment === "" ? "/" : firstUriSegment;
-  const { output = {}, actionArguments, subRoutes } = findRoute(uriSegment, routes);
-  const action = typeof output === "function" && output || typeof output.action === "function" && output.action || (() => {});
+  const { action, subRoutes } = getRouteInfo(uriSegment, routes);
 
-  const actionResult = action(actionArguments);
-  const promise = isPromise(actionResult) ? actionResult : Promise.resolve(actionResult);
+  const actionPayload = action();
+  const promise = isPromise(actionPayload) ? actionPayload : Promise.resolve(actionPayload);
 
   return promise.then(actionResult => {
-    const payload = {
+    const segmentResult = {
       uriSegment,
       actionResult
     };
 
     if (remainingUriSegments.length) {
       return getUriSegmentResult(remainingUriSegments, subRoutes)
-        .then(recursiveResult => [payload, ...recursiveResult]);
+        .then(nestedResults => [segmentResult, ...nestedResults]);
     }
 
-    return [payload];
+    return [segmentResult];
   });
 }
