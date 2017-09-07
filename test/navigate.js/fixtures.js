@@ -9,6 +9,12 @@ export const staticRoutes = {
   "/": {
     action: () => rootActionResult,
     routes: {
+      "#hashbangs": {
+        action: () => "Hashbangs",
+        routes: {
+          "nested": () => "Nested"
+        }
+      },
       "test": () => testActionResult,
       "empty": {
         routes: {

@@ -28,6 +28,24 @@ describe("Static routes", () => {
     });
   });
 
+  it("should be able to support hashbang urls", () => {
+    return navigate("/#hashbangs", staticRoutes, history).then(result => {
+      assert.deepEqual(result, {
+        uriSegments: [
+          {
+            uriSegment: "/",
+            actionResult: rootActionResult
+          },
+          {
+            uriSegment: "#hashbangs",
+            actionResult: "Hashbangs"
+          }
+        ],
+        uri: "/#hashbangs"
+      });
+    });
+  });
+
   it("should return uriSegments with data from each segment", () => {
     return navigate("/test", staticRoutes, history).then(result => {
       assert.deepEqual(result, {
