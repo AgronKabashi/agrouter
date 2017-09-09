@@ -1,5 +1,17 @@
 # agrouter
-The goal with agrouter is to provide an agnostic router with a minimal footprint.
+The goal with agrouter is to provide an agnostic, simple to use router with a minimal footprint.
+
+### Size
+The size of agrouter varies depending on how you import it. ES2015+ yields the best results since the code can be treeshaked and trimmed down even further.
+
+| Formats       | Minified (KB) | Gzipped (KB) |
+|----------------|:---------------:|:--------------:|
+| CommonJS       |     1.8       |    0.86      |
+| ES2015+        |  <= 1.8       |  < 0.86      |
+
+## Related projects
+
+[react-agrouter](https://github.com/AgronKabashi/react-agrouter) - Wrapper library for React/Preact applications
 
 ### Installation
 ```

@@ -16,7 +16,20 @@ function navigate (uri, routes, history, pushState = true) {
     .then(results => ({
       uri,
       uriSegments: results
-    }));
+    }))
+    .catch(error => {
+      if (error.message !== "404") {
+        throw error;
+      }
+
+      const notFoundRoute = routes["404"];
+      return {
+        uri,
+        uriSegments: [{
+          actionResult: notFoundRoute && notFoundRoute()
+        }]
+      };
+    });
 }
 
 function getActionOrDefault (output) {
@@ -27,7 +40,7 @@ function getRouteInfo (uriSegment, routes) {
   // Do we have a direct match?
   if (routes[uriSegment]) {
     return {
-      action: getActionOrDefault(routes[uriSegment]),
+      action: () => getActionOrDefault(routes[uriSegment])(),
       subRoutes: routes[uriSegment].routes
     };
   }
@@ -46,19 +59,32 @@ function getRouteInfo (uriSegment, routes) {
       return (match = uriSegment.match(regex));
     });
 
-  match = match || [];
+  if (match) {
+    match = match || [];
+
+    return {
+      action: () => getActionOrDefault(routes[routeKey])(match),
+      subRoutes: routes[routeKey].routes
+    };
+  }
+
+  // We've encountered a route that doesn't exist in the routes config
+  const hasCatchRestRule = routes["*"];
+  if (!hasCatchRestRule) {
+    throw new Error("404");
+  }
 
   return {
-    action: () => getActionOrDefault(routes[routeKey])(match),
-    subRoutes: routes[routeKey].routes
+    action: remainingUriSegments => getActionOrDefault(routes["*"])(remainingUriSegments),
+    abortChain: true
   };
 }
 
 function getUriSegmentResult ([firstUriSegment, ...remainingUriSegments], routes = {}) {
   const uriSegment = firstUriSegment === "" ? "/" : firstUriSegment;
-  const { action, subRoutes } = getRouteInfo(uriSegment, routes);
+  const { action, subRoutes, abortChain } = getRouteInfo(uriSegment, routes);
 
-  const actionPayload = action();
+  const actionPayload = action(remainingUriSegments);
   const promise = isPromise(actionPayload) ? actionPayload : Promise.resolve(actionPayload);
 
   return promise.then(actionResult => {
@@ -67,7 +93,7 @@ function getUriSegmentResult ([firstUriSegment, ...remainingUriSegments], routes
       actionResult
     };
 
-    if (remainingUriSegments.length) {
+    if (!abortChain && remainingUriSegments.length) {
       return getUriSegmentResult(remainingUriSegments, subRoutes)
         .then(nestedResults => [segmentResult, ...nestedResults]);
     }

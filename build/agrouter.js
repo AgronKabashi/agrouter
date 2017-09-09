@@ -20,7 +20,20 @@ function navigate (uri, routes, history, pushState) {
     .then(function (results) { return ({
       uri: uri,
       uriSegments: results
-    }); });
+    }); })
+    .catch(function (error) {
+      if (error.message !== "404") {
+        throw error;
+      }
+
+      var notFoundRoute = routes["404"];
+      return {
+        uri: uri,
+        uriSegments: [{
+          actionResult: notFoundRoute && notFoundRoute()
+        }]
+      };
+    });
 }
 
 function getActionOrDefault (output) {
@@ -31,7 +44,7 @@ function getRouteInfo (uriSegment, routes) {
   // Do we have a direct match?
   if (routes[uriSegment]) {
     return {
-      action: getActionOrDefault(routes[uriSegment]),
+      action: function () { return getActionOrDefault(routes[uriSegment])(); },
       subRoutes: routes[uriSegment].routes
     };
   }
@@ -50,11 +63,24 @@ function getRouteInfo (uriSegment, routes) {
       return (match = uriSegment.match(regex));
     });
 
-  match = match || [];
+  if (match) {
+    match = match || [];
+
+    return {
+      action: function () { return getActionOrDefault(routes[routeKey])(match); },
+      subRoutes: routes[routeKey].routes
+    };
+  }
+
+  // We've encountered a route that doesn't exist in the routes config
+  var hasCatchRestRule = routes["*"];
+  if (!hasCatchRestRule) {
+    throw new Error("404");
+  }
 
   return {
-    action: function () { return getActionOrDefault(routes[routeKey])(match); },
-    subRoutes: routes[routeKey].routes
+    action: function (remainingUriSegments) { return getActionOrDefault(routes["*"])(remainingUriSegments); },
+    abortChain: true
   };
 }
 
@@ -67,8 +93,9 @@ function getUriSegmentResult (ref, routes) {
   var ref$1 = getRouteInfo(uriSegment, routes);
   var action = ref$1.action;
   var subRoutes = ref$1.subRoutes;
+  var abortChain = ref$1.abortChain;
 
-  var actionPayload = action();
+  var actionPayload = action(remainingUriSegments);
   var promise = isPromise(actionPayload) ? actionPayload : Promise.resolve(actionPayload);
 
   return promise.then(function (actionResult) {
@@ -77,7 +104,7 @@ function getUriSegmentResult (ref, routes) {
       actionResult: actionResult
     };
 
-    if (remainingUriSegments.length) {
+    if (!abortChain && remainingUriSegments.length) {
       return getUriSegmentResult(remainingUriSegments, subRoutes)
         .then(function (nestedResults) { return [segmentResult ].concat( nestedResults); });
     }

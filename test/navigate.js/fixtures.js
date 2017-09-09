@@ -22,7 +22,8 @@ export const staticRoutes = {
         }
       }
     }
-  }
+  },
+  "404": () => "404"
 };
 
 export const regexRoutes = {
