@@ -15,7 +15,7 @@ The size of agrouter varies depending on how you import it. ES2015+ yields the b
 
 ### Installation
 ```
-npm install agrouter --save-dev
+npm install agrouter --save
 ```
 
 ### Usage
