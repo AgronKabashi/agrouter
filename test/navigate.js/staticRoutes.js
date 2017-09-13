@@ -98,30 +98,4 @@ describe("Static routes", () => {
       });
     });
   });
-
-  it("should stop traversing the tree and execute a '*' route if available and no route was found", () => {
-    const customRoutes = {
-      "/": {
-        routes: {
-          "*": remainingUriSegments => `Catch everything: remaining uriSegments: ${remainingUriSegments}`
-        }
-      }
-    };
-
-    return navigate("/search/param1/param2?param3=true", customRoutes, history).then(result => {
-      assert.deepEqual(result, {
-        uri: "/search/param1/param2?param3=true",
-        uriSegments: [
-          {
-            uriSegment: "/",
-            actionResult: undefined
-          },
-          {
-            uriSegment: "search",
-            actionResult: "Catch everything: remaining uriSegments: param1,param2?param3=true"
-          }
-        ]
-      });
-    });
-  });
 });

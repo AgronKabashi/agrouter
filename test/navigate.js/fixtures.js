@@ -59,3 +59,11 @@ export const asyncRoutes = {
     }
   }
 };
+
+export const catchRestRoutes = {
+  "/": {
+    routes: {
+      "*": remainingUriSegments => `Catch everything: remaining uriSegments: ${remainingUriSegments}`
+    }
+  }
+};
