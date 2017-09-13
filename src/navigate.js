@@ -48,7 +48,7 @@ function getRouteInfo (uriSegment, routes) {
   // Attempt to locate a route that matches the specified uri segment using regular expressions
   let match;
   const routeKey = Object.keys(routes)
-    // A route that starts and ends with a "/" is a regular expression route
+    // A route that starts with a "/" is a regular expression route
     .filter(key => key.startsWith("/"))
     // Execute each one until we find one that matches our uriSegment
     .find(key => {
@@ -60,8 +60,6 @@ function getRouteInfo (uriSegment, routes) {
     });
 
   if (match) {
-    match = match || [];
-
     return {
       action: () => getActionOrDefault(routes[routeKey])(match),
       subRoutes: routes[routeKey].routes
