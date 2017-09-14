@@ -52,7 +52,7 @@ function getRouteInfo (uriSegment, routes) {
   // Attempt to locate a route that matches the specified uri segment using regular expressions
   var match;
   var routeKey = Object.keys(routes)
-    // A route that starts and ends with a "/" is a regular expression route
+    // A route that starts with a "/" is a regular expression route
     .filter(function (key) { return key.startsWith("/"); })
     // Execute each one until we find one that matches our uriSegment
     .find(function (key) {
@@ -64,8 +64,6 @@ function getRouteInfo (uriSegment, routes) {
     });
 
   if (match) {
-    match = match || [];
-
     return {
       action: function () { return getActionOrDefault(routes[routeKey])(match); },
       subRoutes: routes[routeKey].routes
@@ -135,7 +133,7 @@ var ROUTE_PRESETS = {
   NUMBER: /(\d+)/,
   STRICT_NUMBER: /^\d+$/,
   KEY_VALUE_PAIRS: /([\w-]+)=([^&]*)/g,
-  CATCH_ALL: /[\\s\\S]+/
+  CATCH_ALL: /[\s\S]+/
 };
 
 exports.createRouter = createRouter;

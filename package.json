@@ -1,6 +1,6 @@
 {
   "name": "agrouter",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "description": "Simplistic, agnostic routing library",
   "main": "build/agrouter.js",
   "module": "src/index.js",
